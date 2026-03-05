@@ -10,6 +10,57 @@ class NotesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final FirestoreService firestoreService = FirestoreService();
 
+    // Función para mostrar un diálogo de ingreso de nota
+    Future<void> _showAddNoteDialog() async {
+      String title = '';
+      String content = '';
+
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Nueva Nota'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Título'),
+                  onChanged: (value) => title = value,
+                ),
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Contenido'),
+                  onChanged: (value) => content = value,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Cerrar diálogo sin guardar
+                },
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (title.isNotEmpty && content.isNotEmpty) {
+                    await firestoreService.addNote(
+                      Note(
+                        id: '',
+                        title: title,
+                        content: content,
+                      ),
+                    );
+                    Navigator.of(context).pop(); // Cerrar diálogo
+                  }
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Notas Cloud"),
@@ -25,7 +76,6 @@ class NotesScreen extends StatelessWidget {
       body: StreamBuilder<List<Note>>(
         stream: firestoreService.getNotes(),
         builder: (context, snapshot) {
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -48,8 +98,7 @@ class NotesScreen extends StatelessWidget {
             itemCount: notes.length,
             itemBuilder: (context, index) {
               return Card(
-                margin: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 6),
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
                   title: Text(notes[index].title),
                   subtitle: Text(notes[index].content),
@@ -60,15 +109,7 @@ class NotesScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await firestoreService.addNote(
-            Note(
-              id: '',
-              title: "Nota de prueba",
-              content: "Probando conexión segura 🔐",
-            ),
-          );
-        },
+        onPressed: _showAddNoteDialog,
         child: const Icon(Icons.add),
       ),
     );
